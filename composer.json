@@ -1,0 +1,17 @@
+{
+    "name": "krivart/php-qr-code",
+    "description": "PHP QrCode library",
+    "type": "library",
+    "license": "MIT",
+    "authors": [{
+        "name": "Krivah Too",
+        "email": "krivahtoo@gmail.com"
+    }],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "KrivArt\\QrCode\\": "./src"
+        }
+    }
+}
