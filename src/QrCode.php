@@ -3,6 +3,9 @@
  * This file is part of KrivArt QrCode.
  *
  * (c) Noah Too aka Krivah <krivahtoo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace KrivArt\QrCode;
@@ -14,12 +17,12 @@ use Exception;
  */
 class QrCode
 {
-    public const MIN_VERSION = 1;
-    public const MAX_VERSION = 40;
-    private const PENALTY_N1 = 3;
-    private const PENALTY_N2 = 3;
-    private const PENALTY_N3 = 40;
-    private const PENALTY_N4 = 10;
+    public const MIN_VERSION              = 1;
+    public const MAX_VERSION              = 40;
+    private const PENALTY_N1              = 3;
+    private const PENALTY_N2              = 3;
+    private const PENALTY_N3              = 40;
+    private const PENALTY_N4              = 10;
     private const ECC_CODEWORDS_PER_BLOCK = [
         // Version: (note that index 0 is for padding, and is set to an illegal value)
         //0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
@@ -76,40 +79,40 @@ class QrCode
      * Construct function
      *
      * @param int $version
-     * 
+     *
      * @throws \Exception
      **/
     public function __construct(int $version, Ecc $errorCorrectionLevel, array $dataCodewords, int $mask)
     {
-        $this->version = $version;
+        $this->version              = $version;
         $this->errorCorrectionLevel = $errorCorrectionLevel;
-        $this->dataCodewords = $dataCodewords;
-        $this->mask = $mask;
+        $this->dataCodewords        = $dataCodewords;
+        $this->mask                 = $mask;
 
         // Check scalar arguments
         if ($version < self::MIN_VERSION || $version > self::MAX_VERSION) {
-            throw new Exception("Version value out of range");
+            throw new Exception('Version value out of range');
         }
         if ($mask < -1 || $mask > 7) {
-            throw new Exception("Mask value out of range");
+            throw new Exception('Mask value out of range');
         }
         $this->size = $version * 4 + 17;
 
         // Initialize both grids to be size*size arrays of Boolean false
         $row = [];
         for ($i = 0; $i < $this->size; $i++) {
-            array_push($row, false);
+            \array_push($row, false);
         }
         for ($i = 0; $i < $this->size; $i++) {
-            array_push($this->modules, array_slice($row, 0));  // Initially all white
-            array_push($this->isFunction, array_slice($row, 0));
+            \array_push($this->modules, \array_slice($row, 0));  // Initially all white
+            \array_push($this->isFunction, \array_slice($row, 0));
         }
 
         // Compute ECC, draw modules
         $this->drawFunctionPatterns();
         $allCodewords = $this->addEccAndInterleave($dataCodewords);
         $this->drawCodewords($allCodewords);
-			
+
         // Do masking
         if ($mask == -1) {  // Automatically choose best mask
             $minPenalty = 1000000000;
@@ -118,19 +121,19 @@ class QrCode
                 $this->drawFormatBits($i);
                 $penalty = $this->getPenaltyScore();
                 if ($penalty < $minPenalty) {
-                    $mask = $i;
+                    $mask       = $i;
                     $minPenalty = $penalty;
                 }
                 $this->applyMask($i);  // Undoes the mask due to XOR
             }
         }
         if ($mask < 0 || $mask > 7) {
-            throw new Exception("Assertion error");
+            throw new Exception('Assertion error');
         }
         $this->mask = $mask;
         $this->applyMask($mask);  // Apply the final choice of mask
         $this->drawFormatBits($mask);  // Overwrite old format bits
-        
+
         $this->isFunction = [];
     }
 
@@ -138,67 +141,63 @@ class QrCode
      * Undocumented function long description
      *
      * @param string $text Text to encode
-     * 
-     * @return null
-     * 
+     *
      * @throws \Exception
      **/
     public static function encodeText(string $text, Ecc $ecl)
     {
         $segs = QrSegment::makeSegments($text);
+
         return self::encodeSegments($segs, $ecl);
     }
 
     /**
      * Undocumented function long description
      *
-     * @param string $text Text to encode
-     * 
-     * @return null
-     * 
+     * @param int $berder Text to encode
+     *
      * @throws \Exception
      **/
     public function toSvgString($border)
     {
         if ($border < 0) {
-            throw new Exception("Border must be non-negative");
+            throw new Exception('Border must be non-negative');
         }
         $parts = [];
         for ($y = 0; $y < $this->size; $y++) {
             for ($x = 0; $x < $this->size; $x++) {
                 if ($this->getModule($x, $y)) {
-                    $path = "M".($x + $border).",".($y + $border)."h1v1h-1z";
-                    array_push($parts, $path);
+                    $path = 'M' . ($x + $border) . ',' . ($y + $border) . 'h1v1h-1z';
+                    \array_push($parts, $path);
                 }
             }
         }
+
         return '<?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 '. ($this->size + $border * 2).' '. ($this->size + $border * 2) .'" stroke="none">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ' . ($this->size + $border * 2) . ' ' . ($this->size + $border * 2) . '" stroke="none">
             <rect width="100%" height="100%" fill="#FFFFFF"/>
-            <path d="'. implode(" ", $parts) .'" fill="#000000"/>
+            <path d="' . \implode(' ', $parts) . '" fill="#000000"/>
         </svg>';
     }
     /**
      * Undocumented function long description
      *
      * @param array $text Description
-     * 
-     * @return null
-     * 
+     *
      * @throws \Exception
      **/
     public static function encodeSegments($segs, $ecl, $minVersion = 1, $maxVersion = 40, $mask = -1, $boostEcl = true)
     {
         if (
-            !(QrCode::MIN_VERSION <= $minVersion
+            !(self::MIN_VERSION <= $minVersion
             && $minVersion <= $maxVersion
-            && $maxVersion <= QrCode::MAX_VERSION)
+            && $maxVersion <= self::MAX_VERSION)
             || $mask < -1 || $mask > 7
         ) {
-            throw new \Exception("Invalid values");
+            throw new \Exception('Invalid values');
         }
-        $version = 0;
+        $version      = 0;
         $dataUsedBits = 0;
         for ($version = $minVersion;; $version++) {
             $dataCapacityBits = self::getNumDataCodewords($version, $ecl) * 8;
@@ -208,7 +207,7 @@ class QrCode
                 break;  // This version number is found to be suitable
             }
             if ($version >= $maxVersion) {  // All versions in the range could not fit the given data
-                throw new Exception("Data too long");
+                throw new Exception('Data too long');
             }
         }
 
@@ -226,28 +225,28 @@ class QrCode
                 $bb[] = $b;
             }
         }
-        if (count($bb) != $dataUsedBits) {
-            throw new Exception("Assertion error");
+        if (\count($bb) != $dataUsedBits) {
+            throw new Exception('Assertion error');
         }
 
         // Add terminator and pad up to a byte if applicable
         $dataCapacityBits = self::getNumDataCodewords($version, $ecl) * 8;
-        if (count($bb) > $dataCapacityBits) {
-            throw new Exception("Assertion error");
+        if (\count($bb) > $dataCapacityBits) {
+            throw new Exception('Assertion error');
         }
-        self::appendBits(0, min([4, $dataCapacityBits - count($bb)]), $bb);
-        self::appendBits(0, (8 - count($bb) % 8) % 8, $bb);
-        if (count($bb) % 8 != 0) {
-            throw new Exception("Assertion error");
+        self::appendBits(0, \min([4, $dataCapacityBits - \count($bb)]), $bb);
+        self::appendBits(0, (8 - \count($bb) % 8) % 8, $bb);
+        if (\count($bb) % 8 != 0) {
+            throw new Exception('Assertion error');
         }
 
         // Pad with alternating bytes until data capacity is reached
-        for ($padByte = 0xEC; count($bb) < $dataCapacityBits; $padByte ^= 0xEC ^ 0x11) {
+        for ($padByte = 0xEC; \count($bb) < $dataCapacityBits; $padByte ^= 0xEC ^ 0x11) {
             self::appendBits($padByte, 8, $bb);
         }
 
         $dataCodewords = [];
-        while (count($dataCodewords) * 8 < count($bb)) {
+        while (\count($dataCodewords) * 8 < \count($bb)) {
             $dataCodewords[] = 0;
         }
         foreach ($bb as $i => $b) {
@@ -255,7 +254,7 @@ class QrCode
         }
 
         // Create the QR Code object
-        return new QrCode($version, $ecl, $dataCodewords, $mask);
+        return new self($version, $ecl, $dataCodewords, $mask);
     }
 
     /**
@@ -263,9 +262,7 @@ class QrCode
      *
      * @param int $x Description
      * @param int $y Description
-     * 
-     * @return null
-     * 
+     *
      * @throws \Exception
      **/
     public function getModule($x, $y)
@@ -278,25 +275,27 @@ class QrCode
      *
      * @param int   $val Value
      * @param int   $len Length
-     * @param array $bb 
-     * 
-     * @return null
-     * 
+     * @param array $bb
+     *
      * @throws \Exception
      **/
     public static function getNumRawDataModules(int $ver)
     {
-        if ($ver < QrCode::MIN_VERSION || $ver > QrCode::MAX_VERSION)
-            throw new Exception("Version number out of range");
+        if ($ver < self::MIN_VERSION || $ver > self::MAX_VERSION) {
+            throw new Exception('Version number out of range');
+        }
         $result = (16 * $ver + 128) * $ver + 64;
         if ($ver >= 2) {
-            $numAlign = floor($ver / 7) + 2;
+            $numAlign = \floor($ver / 7) + 2;
             $result -= (25 * $numAlign - 10) * $numAlign - 55;
-            if ($ver >= 7)
+            if ($ver >= 7) {
                 $result -= 36;
+            }
         }
-        if (!(208 <= $result && $result <= 29648))
-            throw new Exception("Assertion error");
+        if (!(208 <= $result && $result <= 29648)) {
+            throw new Exception('Assertion error');
+        }
+
         return $result;
     }
 
@@ -305,15 +304,13 @@ class QrCode
      *
      * @param int   $val Value
      * @param int   $len Length
-     * @param array $bb 
-     * 
-     * @return null
-     * 
+     * @param array $bb
+     *
      * @throws \Exception
      **/
     public static function getNumDataCodewords(int $ver, Ecc $ecl)
     {
-        return (floor(self::getNumRawDataModules($ver) / 8) -
+        return (\floor(self::getNumRawDataModules($ver) / 8) -
             self::ECC_CODEWORDS_PER_BLOCK[$ecl->ordinal][$ver] *
             self::NUM_ERROR_CORRECTION_BLOCKS[$ecl->ordinal][$ver]);
     }
@@ -323,16 +320,14 @@ class QrCode
      *
      * @param int   $val Value
      * @param int   $len Length
-     * @param array $bb 
-     * 
-     * @return null
-     * 
+     * @param array $bb
+     *
      * @throws \Exception
      **/
     public static function appendBits(int $val, int $len, array &$bb)
     {
         if ($len < 0 || $len > 31 || $val >> $len != 0) {
-            throw new \Exception("Value out of range");
+            throw new \Exception('Value out of range');
         }
         for ($i = $len - 1; $i >= 0; $i--) {
             $bb[] = (int) (($val >> $i) & 1);
@@ -344,9 +339,7 @@ class QrCode
      *
      * @param int $x Value x
      * @param int $i
-     * 
-     * @return null
-     * 
+     *
      * @throws \Exception
      **/
     public static function getBit(int $x, int $i)
@@ -356,9 +349,8 @@ class QrCode
 
     /**
      * Reads this object's version field, and draws and marks all function modules.
-     * 
-     * @return void
-     * 
+     *
+     *
      * @throws \Exception
      **/
     private function drawFunctionPatterns()
@@ -376,7 +368,7 @@ class QrCode
 
         // Draw numerous alignment patterns
         $alignPatPos = $this->getAlignmentPatternPositions();
-        $numAlign = count($alignPatPos);
+        $numAlign    = \count($alignPatPos);
         for ($i = 0; $i < $numAlign; $i++) {
             for ($j = 0; $j < $numAlign; $j++) {
                 // Don't draw on the three finder corners
@@ -397,34 +389,30 @@ class QrCode
      * @param int  $x
      * @param int  $y
      * @param bool $isBlack
-     * 
-     * @return void
-     * 
+     *
      * @throws \Exception
      **/
     private function setFunctionModule(int $x, int $y, bool $isBlack)
     {
-        $this->modules[$y][$x] = $isBlack;
+        $this->modules[$y][$x]    = $isBlack;
         $this->isFunction[$y][$x] = true;
     }
 
     /**
      * Undocumented function long description
      *
-     * @param int  $x
-     * @param int  $y
-     * 
-     * @return void
-     * 
+     * @param int $x
+     * @param int $y
+     *
      * @throws \Exception
      **/
     private function drawFinderPattern(int $x, int $y)
     {
         for ($dy = -4; $dy <= 4; $dy++) {
             for ($dx = -4; $dx <= 4; $dx++) {
-                $dist = max(abs($dx), abs($dy));  // Chebyshev/infinity norm
-                $xx = $x + $dx;
-                $yy = $y + $dy;
+                $dist = \max(\abs($dx), \abs($dy));  // Chebyshev/infinity norm
+                $xx   = $x + $dx;
+                $yy   = $y + $dy;
                 if (0 <= $xx && $xx < $this->size && 0 <= $yy && $yy < $this->size) {
                     $this->setFunctionModule($xx, $yy, $dist != 2 && $dist != 4);
                 }
@@ -434,9 +422,9 @@ class QrCode
 
     /**
      * Returns an ascending list of positions of alignment patterns for this version number.
-     * 
+     *
      * @return array
-     * 
+     *
      * @throws \Exception
      **/
     private function getAlignmentPatternPositions()
@@ -444,28 +432,28 @@ class QrCode
         if ($this->version == 1) {
             return [];
         } else {
-            $numAlign = floor($this->version / 7) + 2;
-            $step = ($this->version == 32) ? 26 : ceil(($this->size - 13) / ($numAlign * 2 - 2)) * 2;
-            $result = [6];
+            $numAlign = \floor($this->version / 7) + 2;
+            $step     = ($this->version == 32) ? 26 : \ceil(($this->size - 13) / ($numAlign * 2 - 2)) * 2;
+            $result   = [6];
             for ($pos = $this->size - 7; $result->length < $numAlign; $pos -= $step) {
-                array_splice($result, 1, 0, $pos);
+                \array_splice($result, 1, 0, $pos);
             }
+
             return $result;
         }
     }
 
     /**
      * Returns an ascending list of positions of alignment patterns for this version number.
-     * 
-     * @return void
-     * 
+     *
+     *
      * @throws \Exception
      **/
     private function drawAlignmentPattern(int $x, int $y)
     {
         for ($dy = -2; $dy <= 2; $dy++) {
             for ($dx = -2; $dx <= 2; $dx++) {
-                $this->setFunctionModule($x + $dx, $y + $dy, max(abs($dx), abs($dy)) != 1);
+                $this->setFunctionModule($x + $dx, $y + $dy, \max(\abs($dx), \abs($dy)) != 1);
             }
         }
     }
@@ -475,21 +463,19 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function drawFormatBits(int $mask)
     {
         // Calculate error correction code and pack bits
         $data = $this->errorCorrectionLevel->formatBits << 3 | $mask;  // errCorrLvl is uint2, mask is uint3
-        $rem = $data;
+        $rem  = $data;
         for ($i = 0; $i < 10; $i++) {
             $rem = ($rem << 1) ^ (($rem >> 9) * 0x537);
         }
         $bits = ($data << 10 | $rem) ^ 0x5412;  // uint15
         if ($bits >> 15 != 0) {
-            throw new Exception("Assertion error");
+            throw new Exception('Assertion error');
         }
 
         // Draw first copy
@@ -518,8 +504,6 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function drawVersion(): void
@@ -535,14 +519,14 @@ class QrCode
         }
         $bits = $this->version << 12 | $rem;  // uint18
         if ($bits >> 18 != 0) {
-            throw new Exception("Assertion error");
+            throw new Exception('Assertion error');
         }
 
         // Draw two copies
         for ($i = 0; $i < 18; $i++) {
             $color = $this->getBit($bits, $i);
-            $a = $this->size - 11 + $i % 3;
-            $b = (int) floor($i / 3);
+            $a     = $this->size - 11 + $i % 3;
+            $b     = (int) \floor($i / 3);
             $this->setFunctionModule($a, $b, $color);
             $this->setFunctionModule($b, $a, $color);
         }
@@ -553,42 +537,40 @@ class QrCode
      *
      * @param array $data
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function addEccAndInterleave($data)
     {
         $ver = $this->version;
         $ecl = $this->errorCorrectionLevel;
-        if (count($data) != self::getNumDataCodewords($ver, $ecl)) {
-            throw new Exception("Invalid argument");
+        if (\count($data) != self::getNumDataCodewords($ver, $ecl)) {
+            throw new Exception('Invalid argument');
         }
 
         // Calculate parameter numbers
-        $numBlocks = self::NUM_ERROR_CORRECTION_BLOCKS[$ecl->ordinal][$ver];
-        $blockEccLen = self::ECC_CODEWORDS_PER_BLOCK[$ecl->ordinal][$ver];
-        $rawCodewords = floor(self::getNumRawDataModules($ver) / 8);
+        $numBlocks      = self::NUM_ERROR_CORRECTION_BLOCKS[$ecl->ordinal][$ver];
+        $blockEccLen    = self::ECC_CODEWORDS_PER_BLOCK[$ecl->ordinal][$ver];
+        $rawCodewords   = \floor(self::getNumRawDataModules($ver) / 8);
         $numShortBlocks = $numBlocks - $rawCodewords % $numBlocks;
-        $shortBlockLen = floor($rawCodewords / $numBlocks);
+        $shortBlockLen  = \floor($rawCodewords / $numBlocks);
 
         // Split data into blocks and append ECC to each block
         $blocks = [];
-        $rsDiv = self::reedSolomonComputeDivisor($blockEccLen);
+        $rsDiv  = self::reedSolomonComputeDivisor($blockEccLen);
         for ($i = 0, $k = 0; $i < $numBlocks; $i++) {
-            $dat = array_slice($data, $k, $k + $shortBlockLen - $blockEccLen + ($i < $numShortBlocks ? 0 : 1));
-            
-            $k += count($dat);
+            $dat = \array_slice($data, $k, $k + $shortBlockLen - $blockEccLen + ($i < $numShortBlocks ? 0 : 1));
+
+            $k += \count($dat);
             $ecc = self::reedSolomonComputeRemainder($dat, $rsDiv);
             if ($i < $numShortBlocks) {
                 $dat[] = 0;
             }
-            $blocks[] = array_merge($dat, $ecc);
+            $blocks[] = \array_merge($dat, $ecc);
         }
 
         // Interleave (not concatenate) the bytes from every block into a single sequence
         $result = [];
-        for ($i = 0; $i < count($blocks[0]); $i++) {
+        for ($i = 0; $i < \count($blocks[0]); $i++) {
             foreach ($blocks as $j => $block) {
                 // Skip the padding byte in short blocks
                 if ($i != $shortBlockLen - $blockEccLen || $j >= $numShortBlocks) {
@@ -596,9 +578,10 @@ class QrCode
                 }
             }
         }
-        if (count($result) != $rawCodewords) {
-            throw new Exception("Assertion error");
+        if (\count($result) != $rawCodewords) {
+            throw new Exception('Assertion error');
         }
+
         return $result;
     }
 
@@ -607,14 +590,12 @@ class QrCode
      *
      * @param array $data
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private static function reedSolomonComputeDivisor($degree)
     {
         if ($degree < 1 || $degree > 255) {
-            throw new Exception("Degree out of range");
+            throw new Exception('Degree out of range');
         }
         // Polynomial coefficients are stored from highest to lowest power, excluding the leading term which is always 1.
         // For example the polynomial x^3 + 255x^2 + 8x + 93 is stored as the uint8 array [255, 8, 93].
@@ -623,20 +604,22 @@ class QrCode
             $result[] = 0;
         }
         $result[] = 1;  // Start off with the monomial x^0
-        
+
         // Compute the product polynomial (x - r^0) * (x - r^1) * (x - r^2) * ... * (x - r^{degree-1}),
         // and drop the highest monomial term which is always 1x^degree.
         // Note that r = 0x02, which is a generator element of this field GF(2^8/0x11D).
         $root = 1;
         for ($i = 0; $i < $degree; $i++) {
             // Multiply the current product by (x - r^i)
-            for ($j = 0; $j < count($result); $j++) {
+            for ($j = 0; $j < \count($result); $j++) {
                 $result[$j] = self::reedSolomonMultiply($result[$j], $root);
-                if ($j + 1 < count($result))
+                if ($j + 1 < \count($result)) {
                     $result[$j] ^= $result[$j + 1];
+                }
             }
             $root = self::reedSolomonMultiply($root, 0x02);
         }
+
         return $result;
     }
 
@@ -645,25 +628,24 @@ class QrCode
      *
      * @param array $data
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private static function reedSolomonComputeRemainder($data, $divisor)
     {
-        $result = array_map(
+        $result = \array_map(
             function () {
                 return 0;
             },
             $divisor
         );
         foreach ($data as $b) {  // Polynomial division
-            $factor = $b ^ array_shift($result);
+            $factor   = $b ^ \array_shift($result);
             $result[] = 0;
             foreach ($divisor as $i => $coef) {
                 $result[$i] ^= self::reedSolomonMultiply($coef, $factor);
             }
         }
+
         return $result;
     }
 
@@ -672,14 +654,12 @@ class QrCode
      *
      * @param array $data
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private static function reedSolomonMultiply($x, $y)
     {
         if ($x >> 8 != 0 || $y >> 8 != 0) {
-            throw new Exception("Byte out of range");
+            throw new Exception('Byte out of range');
         }
         // Russian peasant multiplication
         $z = 0;
@@ -688,8 +668,9 @@ class QrCode
             $z ^= (($y >> $i) & 1) * $x;
         }
         if ($z >> 8 != 0) {
-            throw new Exception("Assertion error");
+            throw new Exception('Assertion error');
         }
+
         return $z;
     }
 
@@ -698,14 +679,12 @@ class QrCode
      *
      * @param array $data
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function drawCodewords($data)
     {
-        if (count($data) != floor(self::getNumRawDataModules($this->version) / 8)) {
-            throw new Exception("Invalid argument");
+        if (\count($data) != \floor(self::getNumRawDataModules($this->version) / 8)) {
+            throw new Exception('Invalid argument');
         }
         $i = 0;  // Bit index into the data
         // Do the funny zigzag scan
@@ -715,10 +694,10 @@ class QrCode
             }
             for ($vert = 0; $vert < $this->size; $vert++) {  // Vertical counter
                 for ($j = 0; $j < 2; $j++) {
-                    $x = $right - $j;  // Actual x coordinate
+                    $x      = $right - $j;  // Actual x coordinate
                     $upward = (($right + 1) & 2) == 0;
-                    $y = $upward ? $this->size - 1 - $vert : $vert;  // Actual y coordinate
-                    if (!$this->isFunction[$y][$x] && $i < count($data) * 8) {
+                    $y      = $upward ? $this->size - 1 - $vert : $vert;  // Actual y coordinate
+                    if (!$this->isFunction[$y][$x] && $i < \count($data) * 8) {
                         $this->modules[$y][$x] = $this->getBit($data[$i >> 3], 7 - ($i & 7));
                         $i++;
                     }
@@ -727,8 +706,8 @@ class QrCode
                 }
             }
         }
-        if ($i != count($data) * 8) {
-            throw new Exception("Assertion error");
+        if ($i != \count($data) * 8) {
+            throw new Exception('Assertion error');
         }
     }
 
@@ -737,14 +716,12 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function applyMask($mask)
     {
         if ($mask < 0 || $mask > 7) {
-            throw new Exception("Mask value out of range");
+            throw new Exception('Mask value out of range');
         }
         for ($y = 0; $y < $this->size; $y++) {
             for ($x = 0; $x < $this->size; $x++) {
@@ -763,7 +740,7 @@ class QrCode
                         $invert = ($x + $y) % 3 == 0;
                         break;
                     case 4:
-                        $invert = (floor($x / 3) + floor($y / 2)) % 2 == 0;
+                        $invert = (\floor($x / 3) + \floor($y / 2)) % 2 == 0;
                         break;
                     case 5:
                         $invert = $x * $y % 2 + $x * $y % 3 == 0;
@@ -775,7 +752,7 @@ class QrCode
                         $invert = (($x + $y) % 2 + $x * $y % 3) % 2 == 0;
                         break;
                     default:
-                        throw new Exception("Assertion error");
+                        throw new Exception('Assertion error');
                 }
                 if (!$this->isFunction[$y][$x] && $invert) {
                     $this->modules[$y][$x] = !$this->modules[$y][$x];
@@ -789,20 +766,18 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function getPenaltyScore()
     {
         $result = 0;
-        
+
         // Adjacent modules in row having same color, and finder-like patterns
         for ($y = 0; $y < $this->size; $y++) {
-            $runColor = false;
-            $runX = 0;
-            $runHistory = [0,0,0,0,0,0,0];
-            $padRun = $this->size;
+            $runColor   = false;
+            $runX       = 0;
+            $runHistory = [0, 0, 0, 0, 0, 0, 0];
+            $padRun     = $this->size;
             for ($x = 0; $x < $this->size; $x++) {
                 if ($this->modules[$y][$x] == $runColor) {
                     $runX++;
@@ -814,20 +789,21 @@ class QrCode
                 } else {
                     self::finderPenaltyAddHistory($runX + $padRun, $runHistory);
                     $padRun = 0;
-                    if (!$runColor)
+                    if (!$runColor) {
                         $result += $this->finderPenaltyCountPatterns($runHistory) * self::PENALTY_N3;
+                    }
                     $runColor = $this->modules[$y][$x];
-                    $runX = 1;
+                    $runX     = 1;
                 }
             }
             $result += $this->finderPenaltyTerminateAndCount($runColor, $runX + $padRun, $runHistory) * self::PENALTY_N3;
         }
         // Adjacent modules in column having same color, and finder-like patterns
         for ($x = 0; $x < $this->size; $x++) {
-            $runColor = false;
-            $runY = 0;
-            $runHistory = [0,0,0,0,0,0,0];
-            $padRun = $this->size;
+            $runColor   = false;
+            $runY       = 0;
+            $runHistory = [0, 0, 0, 0, 0, 0, 0];
+            $padRun     = $this->size;
             for ($y = 0; $y < $this->size; $y++) {
                 if ($this->modules[$y][$x] == $runColor) {
                     $runY++;
@@ -839,15 +815,16 @@ class QrCode
                 } else {
                     self::finderPenaltyAddHistory($runY + $padRun, $runHistory);
                     $padRun = 0;
-                    if (!$runColor)
+                    if (!$runColor) {
                         $result += $this->finderPenaltyCountPatterns($runHistory) * self::PENALTY_N3;
+                    }
                     $runColor = $this->modules[$y][$x];
-                    $runY = 1;
+                    $runY     = 1;
                 }
             }
             $result += $this->finderPenaltyTerminateAndCount($runColor, $runY + $padRun, $runHistory) * self::PENALTY_N3;
         }
-        
+
         // 2*2 blocks of modules having same color
         for ($y = 0; $y < $this->size - 1; $y++) {
             for ($x = 0; $x < $this->size - 1; $x++) {
@@ -860,7 +837,7 @@ class QrCode
                 }
             }
         }
-        
+
         // Balance of black and white modules
         $black = 0;
         foreach ($this->modules as $row) {
@@ -872,8 +849,9 @@ class QrCode
         }
         $total = $this->size * $this->size;  // Note that size is odd, so black/total != 1/2
         // Compute the smallest integer k >= 0 such that (45-5k)% <= black/total <= (55+5k)%
-        $k = ceil(abs($black * 20 - $total * 10) / $total) - 1;
+        $k = \ceil(\abs($black * 20 - $total * 10) / $total) - 1;
         $result += $k * self::PENALTY_N4;
+
         return $result;
     }
 
@@ -882,14 +860,12 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private static function finderPenaltyAddHistory($currentRunLength, $runHistory)
     {
-        array_pop($runHistory);
-        array_unshift($runHistory, $currentRunLength);
+        \array_pop($runHistory);
+        \array_unshift($runHistory, $currentRunLength);
     }
 
     /**
@@ -897,17 +873,16 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function finderPenaltyCountPatterns($runHistory)
     {
         $n = $runHistory[1];
         if ($n > $this->size * 3) {
-            throw new Exception("Assertion error");
+            throw new Exception('Assertion error');
         }
         $core = $n > 0 && $runHistory[2] == $n && $runHistory[3] == $$n * 3 && $runHistory[4] == $n && $runHistory[5] == $n;
+
         return ($core && $runHistory[0] >= $n * 4 && $runHistory[6] >= $n ? 1 : 0)
              + ($core && $runHistory[6] >= $n * 4 && $runHistory[0] >= $n ? 1 : 0);
     }
@@ -917,8 +892,6 @@ class QrCode
      *
      * @param int $mask
      *
-     * @return void
-     * 
      * @throws \Exception
      **/
     private function finderPenaltyTerminateAndCount($currentRunColor, $currentRunLength, $runHistory)
@@ -929,6 +902,7 @@ class QrCode
         }
         $currentRunLength += $this->size;  // Add white border to final run
         self::finderPenaltyAddHistory($currentRunLength, $runHistory);
+
         return $this->finderPenaltyCountPatterns($runHistory);
     }
 }

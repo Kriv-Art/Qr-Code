@@ -3,6 +3,9 @@ $header = <<<'EOF'
 This file is part of KrivArt QrCode.
 
 (c) Noah Too aka Krivah <krivahtoo@gmail.com>
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
 EOF;
 
 return PhpCsFixer\Config::create()
@@ -76,6 +79,5 @@ return PhpCsFixer\Config::create()
         ->in(__DIR__ . '/src')
         ->in(__DIR__ . '/tests')
         ->in(__DIR__)
-        ->in(__DIR__ . '/Commands')
         ->name('*.php')
     );
