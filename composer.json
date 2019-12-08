@@ -13,7 +13,8 @@
     },
     "autoload": {
         "psr-4": {
-            "KrivArt\\QrCode\\": "./src"
+            "KrivArt\\QrCode\\": "./src",
+            "KrivArt\\Tests\\": "./tests"
         }
     },
     "require-dev": {

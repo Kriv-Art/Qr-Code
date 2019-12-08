@@ -435,7 +435,7 @@ class QrCode
             $numAlign = \floor($this->version / 7) + 2;
             $step     = ($this->version == 32) ? 26 : \ceil(($this->size - 13) / ($numAlign * 2 - 2)) * 2;
             $result   = [6];
-            for ($pos = $this->size - 7; $result->length < $numAlign; $pos -= $step) {
+            for ($pos = $this->size - 7; count($result) < $numAlign; $pos -= $step) {
                 \array_splice($result, 1, 0, $pos);
             }
 

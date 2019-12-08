@@ -1,9 +1,13 @@
+# Composer
 /vendor
+# VS Code configs
 /.vscode
+# PHP CS Fixer cache
+/.php_cs.cache
+
+
+/qrcode.svg
+/test
 /test.php
 /test.htm
-/.php_cs.cache
-/tools
-/docs
-/build
-/qrcode.svg
+/CliProgressBar.php
