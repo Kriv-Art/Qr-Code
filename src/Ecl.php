@@ -10,9 +10,9 @@
 namespace KrivArt\QrCode;
 
 /**
- * Ecc class
+ * Error Correction Level class
  */
-class Ecc
+class Ecl
 {
     public const LOW      = [0, 1];  // The QR Code can tolerate about  7% erroneous codewords
     public const MEDIUM   = [1, 0];  // The QR Code can tolerate about 15% erroneous codewords

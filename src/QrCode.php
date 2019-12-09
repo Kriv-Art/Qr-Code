@@ -61,7 +61,7 @@ class QrCode
     public $version;
 
     /**
-     * @var Ecc
+     * @var Ecl
      */
     public $errorCorrectionLevel;
 
@@ -82,7 +82,7 @@ class QrCode
      *
      * @throws \Exception
      **/
-    public function __construct(int $version, Ecc $errorCorrectionLevel, array $dataCodewords, int $mask)
+    public function __construct(int $version, Ecl $errorCorrectionLevel, array $dataCodewords, int $mask)
     {
         $this->version              = $version;
         $this->errorCorrectionLevel = $errorCorrectionLevel;
@@ -144,7 +144,7 @@ class QrCode
      *
      * @throws \Exception
      **/
-    public static function encodeText(string $text, Ecc $ecl)
+    public static function encodeText(string $text, Ecl $ecl)
     {
         $segs = QrSegment::makeSegments($text);
 
@@ -212,7 +212,7 @@ class QrCode
         }
 
         // Increase the error correction level while the data still fits in the current version number
-        foreach ([new Ecc(Ecc::MEDIUM), new Ecc(Ecc::QUARTILE), new Ecc(Ecc::HIGH)] as $newEcl) {  // From low to high
+        foreach ([new Ecl(Ecl::MEDIUM), new Ecl(Ecl::QUARTILE), new Ecl(Ecl::HIGH)] as $newEcl) {  // From low to high
             if ($boostEcl && $dataUsedBits <= self::getNumDataCodewords($version, $newEcl) * 8) {
                 $ecl = $newEcl;
             }
@@ -308,7 +308,7 @@ class QrCode
      *
      * @throws \Exception
      **/
-    public static function getNumDataCodewords(int $ver, Ecc $ecl)
+    public static function getNumDataCodewords(int $ver, Ecl $ecl)
     {
         return (\floor(self::getNumRawDataModules($ver) / 8) -
             self::ECC_CODEWORDS_PER_BLOCK[$ecl->ordinal][$ver] *
