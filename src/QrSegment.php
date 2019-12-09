@@ -12,15 +12,37 @@ namespace KrivArt\QrCode;
 use Exception;
 
 /**
- * QrSegment class
+ * Data Segment class
+ *
+ * A segment of character/binary/control data in a QR Code symbol.
+ * Instances of this class are immutable.
+ * This segment class imposes no length restrictions, but QR Codes have restrictions.
+ * Even in the most favorable conditions, a QR Code can only hold 7089 characters of data.
+ * Any segment longer than this is meaningless for the purpose of generating QR Codes.
  */
 class QrSegment
 {
+    /**
+     * The set of all legal characters in alphanumeric mode,
+     * where each character value maps to the index in the string.
+     *
+     * @var string
+     */
     public const ALPHANUMERIC_CHARSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+
     public $mode;
     public $numChars;
     public $bitData;
 
+    /**
+     * Creates a new QR Code segment with the given attributes and data.
+     * The character count (numChars) must agree with the mode and the bit buffer length,
+     * but the constraint isn't checked. The given bit buffer is cloned and stored.
+     *
+     * @param Mode  $mode     The mode indicator of this segment.
+     * @param int   $numChars The length of this segment's unencoded data.
+     * @param array $bitData  The data bits of this segment. Accessed through getData().
+     */
     public function __construct($mode, int $numChars, array $bitData)
     {
         if ($numChars < 0) {
@@ -31,6 +53,12 @@ class QrSegment
         $this->bitData  = $bitData;
     }
 
+    /**
+     * Returns a new copy of the data bits of this segment.
+     *
+     *
+     * @return array
+     */
     public function getData()
     {
         $bitData = \array_slice($this->bitData, 0);
@@ -39,9 +67,11 @@ class QrSegment
     }
 
     /**
-     * Returns a new mutable list of zero or more segments to represent the given Unicode text string.
+     * Returns a segment representing the given binary data encoded in
+     * byte mode. All input byte arrays are acceptable. Any text string
+     * can be converted to UTF-8 bytes and encoded as a byte mode segment.
      *
-     * @param string $text Description
+     * @param string $data Description
      *
      * @return array
      **/
@@ -56,9 +86,9 @@ class QrSegment
     }
 
     /**
-     * Returns a new mutable list of zero or more segments to represent the given Unicode text string.
+     * Returns a segment representing the given string of decimal digits encoded in numeric mode.
      *
-     * @param string $text Description
+     * @param int $digits
      *
      * @return array
      **/
@@ -98,7 +128,9 @@ class QrSegment
     }
 
     /**
-     * Undocumented function long description
+     * Returns a segment representing the given text string encoded in alphanumeric mode.
+     * The characters allowed are: 0 to 9, A to Z (uppercase only), space,
+     * dollar, percent, asterisk, plus, hyphen, period, slash, colon.
      *
      * @param string $text Description
      *
@@ -124,7 +156,8 @@ class QrSegment
     }
 
     /**
-     * Undocumented function long description
+     * Returns a segment representing an Extended Channel Interpretation
+     * (ECI) designator with the given assignment value.
      *
      * @param string $text Description
      *
@@ -153,7 +186,8 @@ class QrSegment
     }
 
     /**
-     * Undocumented function long description
+     * Calculates and returns the number of bits needed to encode the given segments at the given version.
+     * The result is infinity if a segment has too many characters to fit its length field.
      *
      * @param string $text Description
      *
@@ -176,7 +210,7 @@ class QrSegment
     }
 
     /**
-     * Undocumented function long description
+     * Returns a new array of bytes representing the given string encoded in UTF-8.
      *
      * @param string $text Description
      *

@@ -14,14 +14,53 @@ namespace KrivArt\QrCode;
  */
 class Ecl
 {
-    public const LOW      = [0, 1];  // The QR Code can tolerate about  7% erroneous codewords
-    public const MEDIUM   = [1, 0];  // The QR Code can tolerate about 15% erroneous codewords
-    public const QUARTILE = [2, 3];  // The QR Code can tolerate about 25% erroneous codewords
-    public const HIGH     = [3, 2];  // The QR Code can tolerate about 30% erroneous codewords
+    /**
+     * The QR Code can tolerate about  7% erroneous codewords
+     *
+     * @var array
+     */
+    public const LOW      = [0, 1];
 
+    /**
+     * The QR Code can tolerate about 15% erroneous codewords
+     *
+     * @var array
+     */
+    public const MEDIUM   = [1, 0];
+
+    /**
+     * The QR Code can tolerate about 25% erroneous codewords
+     *
+     * @var array
+     */
+    public const QUARTILE = [2, 3];
+
+    /**
+     * The QR Code can tolerate about 30% erroneous codewords
+     *
+     * @var array
+     */
+    public const HIGH     = [3, 2];
+
+    /**
+     * In the range 0 to 3 (unsigned 2-bit integer).
+     *
+     * @var int
+     */
     public $ordinal;
+
+    /**
+     * In the range 0 to 3 (unsigned 2-bit integer).
+     *
+     * @var int
+     */
     public $formatBits;
 
+    /**
+     * The error correction level in a QR Code symbol. Immutable.
+     *
+     * @param array $data
+     */
     public function __construct(array $data)
     {
         $this->ordinal    = $data[0];

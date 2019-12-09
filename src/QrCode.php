@@ -13,16 +13,44 @@ namespace KrivArt\QrCode;
 use Exception;
 
 /**
- * Qrcode class
+ * QR Code symbol class
+ *
+ * A QR Code symbol, which is a type of two-dimension barcode.
+ * Instances of this class represent an immutable square grid of black and white cells.
+ * The class provides static factory functions to create a QR Code from text or binary data.
+ * The class covers the QR Code Model 2 specification, supporting all versions (sizes)
+ * from 1 to 40, all 4 error correction levels, and 4 character encoding modes.
  */
 class QrCode
 {
+    /**
+     * The minimum version number supported in the QR Code Model 2 standard.
+     *
+     * @var int
+     */
     public const MIN_VERSION              = 1;
+
+    /**
+     * The maximum version number supported in the QR Code Model 2 standard.
+     *
+     * @var int
+     */
     public const MAX_VERSION              = 40;
+
+    /**
+     * #@+
+     * For use in getPenaltyScore(), when evaluating which mask is best.
+     *
+     * @var int
+     */
     private const PENALTY_N1              = 3;
     private const PENALTY_N2              = 3;
     private const PENALTY_N3              = 40;
     private const PENALTY_N4              = 10;
+    /**
+     * #@-
+     */
+    
     private const ECC_CODEWORDS_PER_BLOCK = [
         // Version: (note that index 0 is for padding, and is set to an illegal value)
         //0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
@@ -41,26 +69,37 @@ class QrCode
         [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81],  // High
     ];
     /**
+     * The modules of this QR Code (false = white, true = black).
+     *
      * @var array
      */
     public $modules = [];
 
     /**
+     * Indicates function modules that are not subjected to masking. Discarded when constructor finishes.
+     *
      * @var array
      */
     public $isFunction = [];
 
     /**
+     * The size of the qrcode depending on the version
+     *
      * @var int
      */
     public $size = 0;
 
     /**
+     * The version number of this QR Code, which is between 1 and 40 (inclusive).
+     * This determines the size of this barcode.
+     *
      * @var int
      */
     public $version;
 
     /**
+     * The error correction level used in this QR Code.
+     *
      * @var Ecl
      */
     public $errorCorrectionLevel;
@@ -71,6 +110,8 @@ class QrCode
     public $dataCodewords;
 
     /**
+     * The index of the mask pattern used in this QR Code, which is between 0 and 7 (inclusive).
+     *
      * @var int
      */
     public $mask;
@@ -78,7 +119,14 @@ class QrCode
     /**
      * Construct function
      *
-     * @param int $version
+     * Creates a new QR Code with the given version number, error correction level, data codeword bytes, and mask number.
+     * This is a low-level API that most users should not use directly.
+     * A mid-level API is the encodeSegments() function.
+     *
+     * @param int   $version              The version number of this QR Code, which is between 1 and 40 (inclusive)
+     * @param Ecl   $errorCorrectionLevel The error correction level used in this QR Code.
+     * @param array $dataCodewords
+     * @param int   $mask                 The index of the mask pattern used in this QR Code, which is between 0 and 7 (inclusive).
      *
      * @throws \Exception
      **/
@@ -138,9 +186,10 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Returns a QR Code representing the given Unicode text string at the given error correction level.
      *
      * @param string $text Text to encode
+     * @param Ecl    $ecl  Error correction level
      *
      * @throws \Exception
      **/
@@ -152,9 +201,10 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Returns a string of SVG code for an image depicting this QR Code, with the given number
+     * of border modules. The string always uses Unix newlines (\n), regardless of the platform.
      *
-     * @param int $berder Text to encode
+     * @param int $border Border
      *
      * @throws \Exception
      **/
@@ -181,9 +231,12 @@ class QrCode
         </svg>';
     }
     /**
-     * Undocumented function long description
+     * Returns a QR Code representing the given segments with the given encoding parameters.
      *
-     * @param array $text Description
+     * @param array $segs       Description
+     * @param array $minVersion Description
+     * @param array $maxVersion Description
+     * @param array $mask       Description
      *
      * @throws \Exception
      **/
@@ -197,6 +250,8 @@ class QrCode
         ) {
             throw new \Exception('Invalid values');
         }
+
+        // Find the minimal version number to use
         $version      = 0;
         $dataUsedBits = 0;
         for ($version = $minVersion;; $version++) {
@@ -217,6 +272,7 @@ class QrCode
                 $ecl = $newEcl;
             }
         }
+        // Concatenate all segments to create the data bit string
         $bb = [];
         foreach ($segs as $seg) {
             self::appendBits($seg->mode->modeBits, 4, $bb);
@@ -258,7 +314,9 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Returns the color of the module (pixel) at the given coordinates, which is false
+     * for white or true for black. The top left corner has the coordinates (x=0, y=0).
+     * If the given coordinates are out of bounds, then false (white) is returned.
      *
      * @param int $x Description
      * @param int $y Description
@@ -271,11 +329,11 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Returns the number of data bits that can be stored in a QR Code of the given version number, after
+     * all function modules are excluded. This includes remainder bits, so it might not be a multiple of 8.
+     * The result is in the range [208, 29648]. This could be implemented as a 40-entry lookup table.
      *
-     * @param int   $val Value
-     * @param int   $len Length
-     * @param array $bb
+     * @param int $ver Version number
      *
      * @throws \Exception
      **/
@@ -300,11 +358,12 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Returns the number of 8-bit data (i.e. not error correction) codewords contained in any
+     * QR Code of the given version number and error correction level, with remainder bits discarded.
+     * This stateless pure function could be implemented as a (40*4)-cell lookup table.
      *
-     * @param int   $val Value
-     * @param int   $len Length
-     * @param array $bb
+     * @param int $ver Version number
+     * @param int $ecl Error correction level
      *
      * @throws \Exception
      **/
@@ -316,7 +375,8 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Appends the given number of low-order bits of the given value
+     * to the given buffer. Requires 0 <= len <= 31 and 0 <= val < 2^len.
      *
      * @param int   $val Value
      * @param int   $len Length
@@ -335,7 +395,7 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Returns true iff the i'th bit of x is set to 1.
      *
      * @param int $x Value x
      * @param int $i
@@ -349,7 +409,6 @@ class QrCode
 
     /**
      * Reads this object's version field, and draws and marks all function modules.
-     *
      *
      * @throws \Exception
      **/
@@ -384,7 +443,8 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Sets the color of a module and marks it as a function module.
+     * Only used by the constructor. Coordinates must be in bounds.
      *
      * @param int  $x
      * @param int  $y
@@ -399,7 +459,8 @@ class QrCode
     }
 
     /**
-     * Undocumented function long description
+     * Draws a 9*9 finder pattern including the border separator,
+     * with the center module at (x, y). Modules can be out of bounds.
      *
      * @param int $x
      * @param int $y
@@ -422,6 +483,8 @@ class QrCode
 
     /**
      * Returns an ascending list of positions of alignment patterns for this version number.
+     * Each position is in the range [0,177), and are used on both the x and y axes.
+     * This could be implemented as lookup table of 40 variable-length lists of integers.
      *
      * @return array
      *
@@ -435,7 +498,7 @@ class QrCode
             $numAlign = \floor($this->version / 7) + 2;
             $step     = ($this->version == 32) ? 26 : \ceil(($this->size - 13) / ($numAlign * 2 - 2)) * 2;
             $result   = [6];
-            for ($pos = $this->size - 7; count($result) < $numAlign; $pos -= $step) {
+            for ($pos = $this->size - 7; \count($result) < $numAlign; $pos -= $step) {
                 \array_splice($result, 1, 0, $pos);
             }
 
@@ -444,8 +507,11 @@ class QrCode
     }
 
     /**
-     * Returns an ascending list of positions of alignment patterns for this version number.
+     * Draws a 5*5 alignment pattern, with the center module
+     * at (x, y). All modules must be in bounds.
      *
+     * @param int $x
+     * @param int $y
      *
      * @throws \Exception
      **/
@@ -460,6 +526,7 @@ class QrCode
 
     /**
      * Draws two copies of the format bits (with its own error correction code)
+     * based on the given mask and this object's error correction level field.
      *
      * @param int $mask
      *
@@ -500,13 +567,12 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
-     *
-     * @param int $mask
+     * Draws two copies of the version bits (with its own error correction code)
+     * based on this object's version field, iff 7 <= version <= 40.
      *
      * @throws \Exception
      **/
-    private function drawVersion(): void
+    private function drawVersion()
     {
         if ($this->version < 7) {
             return;
@@ -533,7 +599,8 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Returns a new byte string representing the given data with the appropriate error correction
+     * codewords appended to it, based on this object's version and error correction level.
      *
      * @param array $data
      *
@@ -586,7 +653,8 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Returns a Reed-Solomon ECC generator polynomial for the given degree. This could be
+     * implemented as a lookup table over all possible parameter values, instead of as an algorithm.
      *
      * @param array $data
      *
@@ -624,9 +692,10 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Returns the Reed-Solomon error correction codeword for the given data and divisor polynomials.
      *
      * @param array $data
+     * @param array $divisor
      *
      * @throws \Exception
      **/
@@ -650,7 +719,8 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Returns the product of the two given field elements modulo GF(2^8/0x11D). The arguments and result
+     * are unsigned 8-bit integers. This could be implemented as a lookup table of 256*256 entries of uint8.
      *
      * @param array $data
      *
@@ -675,7 +745,8 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Draws the given sequence of 8-bit codewords (data and error correction) onto the entire
+     * data area of this QR Code. Function modules need to be marked off before this is called.
      *
      * @param array $data
      *
@@ -712,7 +783,11 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * XORs the codeword modules in this QR Code with the given mask pattern.
+     * The function modules must be marked and the codeword bits must be drawn
+     * before masking. Due to the arithmetic of XOR, calling applyMask() with
+     * the same mask value a second time will undo the mask. A final well-formed
+     * QR Code needs exactly one (not zero, two, etc.) mask applied.
      *
      * @param int $mask
      *
@@ -762,7 +837,8 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Calculates and returns the penalty score based on state of this QR Code's current modules.
+     * This is used by the automatic mask choice algorithm to find the mask pattern that yields the lowest score.
      *
      * @param int $mask
      *
@@ -856,9 +932,10 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Pushes the given value to the front and drops the last value. A helper function for getPenaltyScore().
      *
-     * @param int $mask
+     * @param array $currentRunLength
+     * @param array $runHistory
      *
      * @throws \Exception
      **/
@@ -869,9 +946,10 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Can only be called immediately after a white run is added, and
+     * returns either 0, 1, or 2. A helper function for getPenaltyScore().
      *
-     * @param int $mask
+     * @param array $runHistory
      *
      * @throws \Exception
      **/
@@ -888,9 +966,11 @@ class QrCode
     }
 
     /**
-     * Draws two copies of the format bits (with its own error correction code)
+     * Must be called at the end of a line (row or column) of modules. A helper function for getPenaltyScore().
      *
-     * @param int $mask
+     * @param array $currentRunColor
+     * @param array $currentRunLength
+     * @param array $runHistory
      *
      * @throws \Exception
      **/
