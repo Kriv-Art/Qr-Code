@@ -56,7 +56,6 @@ class QrSegment
     /**
      * Returns a new copy of the data bits of this segment.
      *
-     *
      * @return array
      */
     public function getData()
@@ -78,7 +77,7 @@ class QrSegment
     public static function makeBytes($data)
     {
         $bb = [];
-        foreach ($data as $b => $val) {
+        foreach ($data as $b) {
             QrCode::appendBits($b, 8, $bb);
         }
 
@@ -94,16 +93,17 @@ class QrSegment
      **/
     public static function makeNumeric($digits)
     {
-        // if (!this.NUMERIC_REGEX.test(digits))
-        //     throw "String contains non-numeric characters";
+        if (!\preg_match('/^[0-9]*$/', $digits)) {
+            throw new Exception("String contains non-numeric characters");
+        }
         $bb = [];
-        for ($i = 0; $i < \count($digits);) { // Consume up to 3 digits per iteration
-            $n = \min(\count($digits) - $i, 3);
+        for ($i = 0; $i < strlen($digits);) { // Consume up to 3 digits per iteration
+            $n = \min(strlen($digits) - $i, 3);
             QrCode::appendBits(\intval(\mb_substr($digits, $i, $n), 10), $n * 3 + 1, $bb);
             $i += $n;
         }
 
-        return new self(new Mode(Mode::NUMERIC), \count($digits), bb);
+        return new self(new Mode(Mode::NUMERIC), strlen($digits), $bb);
     }
 
     /**
@@ -120,7 +120,7 @@ class QrSegment
             return [];
         } elseif (\preg_match('/^[0-9]*$/', $text)) {
             return [self::makeNumeric($text)];
-        } elseif (\preg_match("/^[A-Z0-9 $%*+.\/:-]*$/", $text)) {
+        } elseif (\preg_match('/^[A-Z0-9 $%*+.\/:-]*$/', $text)) {
             return [self::makeAlphanumeric($text)];
         } else {
             return [self::makeBytes(self::toUtf8ByteArray($text))];
@@ -220,13 +220,12 @@ class QrSegment
      **/
     public static function toUtf8ByteArray($str)
     {
-        // $str = urlencode($str);
         $str    = \rawurlencode($str);
         $result = [];
         $strs   = \str_split($str);
         for ($i = 0; $i < \mb_strlen($str); $i++) {
             if ($strs[$i] != '%') {
-                $result[] = $strs[$i];
+                $result[] = ord($strs[$i]);
             } else {
                 $result[] = \intval(\mb_substr($str, $i + 1, 2), 16);
                 $i += 2;
