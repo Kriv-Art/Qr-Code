@@ -20,7 +20,7 @@ class Svg extends Formatter
     public function format()
     {
         $border = $this->border;
-        if ($border === 20) {
+        if ($border === 20 || $border === null) {
             $border = 4;
         }
         if ($border < 0) {
