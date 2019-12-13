@@ -94,16 +94,16 @@ class QrSegment
     public static function makeNumeric($digits)
     {
         if (!\preg_match('/^[0-9]*$/', $digits)) {
-            throw new Exception("String contains non-numeric characters");
+            throw new Exception('String contains non-numeric characters');
         }
         $bb = [];
-        for ($i = 0; $i < strlen($digits);) { // Consume up to 3 digits per iteration
-            $n = \min(strlen($digits) - $i, 3);
+        for ($i = 0; $i < \mb_strlen($digits);) { // Consume up to 3 digits per iteration
+            $n = \min(\mb_strlen($digits) - $i, 3);
             QrCode::appendBits(\intval(\mb_substr($digits, $i, $n), 10), $n * 3 + 1, $bb);
             $i += $n;
         }
 
-        return new self(new Mode(Mode::NUMERIC), strlen($digits), $bb);
+        return new self(new Mode(Mode::NUMERIC), \mb_strlen($digits), $bb);
     }
 
     /**
@@ -225,7 +225,7 @@ class QrSegment
         $strs   = \str_split($str);
         for ($i = 0; $i < \mb_strlen($str); $i++) {
             if ($strs[$i] != '%') {
-                $result[] = ord($strs[$i]);
+                $result[] = \ord($strs[$i]);
             } else {
                 $result[] = \intval(\mb_substr($str, $i + 1, 2), 16);
                 $i += 2;
